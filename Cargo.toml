@@ -1,0 +1,6 @@
+[package]
+name = "laundry-sms"
+version = "0.1.0"
+authors = ["Keith Mattix II <keithmattix2@gmail.com>"]
+
+[dependencies]

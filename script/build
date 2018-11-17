@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cd "$(dirname "$0")/.."
+
+docker run \
+    --volume /Users/Keith/CIS386/raspberry/laundry-sms:/home/cross/project \
+    --volume /Users/Keith/CIS386/raspberry/laundry-sms/deps:/home/cross/deb-deps \
+    --volume /Users/Keith/.cargo/registry:/home/cross/.cargo/registry \
+    ragnaroek/rust-raspberry:1.30.0 \
+    "build"
