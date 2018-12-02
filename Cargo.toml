@@ -4,3 +4,8 @@ version = "0.1.0"
 authors = ["Keith Mattix II <keithmattix2@gmail.com>"]
 
 [dependencies]
+rppal = "0.9"
+arrayvec = "0.4.8"
+log = "0.4"
+twilio = "0.1.2"
+simplelog = "0.5.3"
