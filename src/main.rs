@@ -10,7 +10,7 @@ use std::fs::File;
 use simplelog::*;
 
 use std::time::{Duration};
-use twilio::{Client, OutboundMessage}
+use twilio::{Client, OutboundMessage};
 
 use rppal::gpio::{Gpio, Mode, Level, Trigger};
 use arrayvec::{ArrayVec};
@@ -20,7 +20,7 @@ const FROM_NUMBER: &str = "+19015860851";
 const TO_NUMBER: &str = "+19018257798";
 
 fn main() {
-  WriteLogger::init(LevelFilter::Info, Config::default(), File::create("laundry_sms.log").unwrap()).unwrap();
+  WriteLogger::init(LevelFilter::Debug, Config::default(), File::create("laundry_sms.log").unwrap()).unwrap();
   let twilio_account_env = env::var("TWILIO_ACCOUNT_ID");
   let twilio_auth_env = env::var("TWILIO_AUTH_TOKEN");
   let account_id;
@@ -33,7 +33,7 @@ fn main() {
     Ok(value) => auth_token = value,
     Err(_err) => panic!("TWILIO_AUTH_TOKEN not set: Please make sure both twilio env vars are set."),
   }
-  let client = Client::new(account_id, auth_token);
+  let client = Client::new(&account_id.to_string(), &auth_token.to_string());
 
   let mut gpio = Gpio::new().unwrap();
   gpio.set_mode(GPIO_VIBRATION, Mode::Input);
@@ -42,7 +42,7 @@ fn main() {
     Ok(_) => (),
     Err(err) => error!("GPIO error occurred: {}.", err),
   }
-  let mut signals = ArrayVec::<[Level; 3]>::new();
+  let mut signals = ArrayVec::from([Level::Low, Level::Low, Level::Low]);
   let mut active: bool = false; // active represents whether or not the laundry machine is active
   loop {
     let level = gpio.poll_interrupt(GPIO_VIBRATION, false, None).unwrap().unwrap();
@@ -53,19 +53,21 @@ fn main() {
         signals.insert(0, level);
       }
     }
+    debug!("Signals: {:?}", signals);
     // if every element in the signals arravec is low, then the pi has been idle for 3 minutes
-    let is_idle = signals.as_slice().iter().all(|&signal| signal == Level::Low);
     if level == Level::High {
-      if !active && !is_idle {
+      let all_signals_high = signals.as_slice().iter().all(|&signal| signal == Level::High);
+      if !active && all_signals_high {
         // If the machine was idle and now it hasn't been for 3 minutes, it's started
         active = true;
         info!("New load started!");
       }
     } else if level == Level::Low {
+      let is_idle = signals.as_slice().iter().all(|&signal| signal == Level::Low);
       if active && is_idle {
         // If the machine was active and now it's been idle for 3 minutes, it's done
         active = false;
-        send_laundry_finished_message(client);
+        send_laundry_finished_message(&client);
         info!("Load finished!");
       }
     }
@@ -73,7 +75,7 @@ fn main() {
   }
 }
 
-fn send_laundry_finished_message(client: Client) {
+fn send_laundry_finished_message(client: &Client) {
   let body = "Your laundry is ready for you to pick up!";
   match client.send_message(OutboundMessage::new(FROM_NUMBER, TO_NUMBER, body)) {
     Ok(_message) => info!("Sent notification to {}.", TO_NUMBER),
