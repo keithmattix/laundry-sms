@@ -20,7 +20,7 @@ const FROM_NUMBER: &str = "+19015860851";
 const TO_NUMBER: &str = "+19018257798";
 
 fn main() {
-  WriteLogger::init(LevelFilter::Debug, Config::default(), File::create("laundry_sms.log").unwrap()).unwrap();
+  WriteLogger::init(LevelFilter::Debug, Config::default(), File::create("/home/pi/laundry-sms/laundry_sms.log").unwrap()).unwrap();
   let twilio_account_env = env::var("TWILIO_ACCOUNT_ID");
   let twilio_auth_env = env::var("TWILIO_AUTH_TOKEN");
   let account_id;
@@ -42,14 +42,14 @@ fn main() {
     Ok(_) => (),
     Err(err) => error!("GPIO error occurred: {}.", err),
   }
-  let mut signals = ArrayVec::from([Level::Low, Level::Low, Level::Low]);
+  let mut signals = ArrayVec::from([Level::Low;10]);
   let mut active: bool = false; // active represents whether or not the laundry machine is active
   loop {
     let level = gpio.poll_interrupt(GPIO_VIBRATION, false, None).unwrap().unwrap();
     match signals.try_insert(0, level) { // insert the new reading into the fixed vector
       Ok(_) => (),
       Err(_e) => {
-        signals.remove(2);
+        signals.remove(9);
         signals.insert(0, level);
       }
     }
@@ -71,7 +71,7 @@ fn main() {
         info!("Load finished!");
       }
     }
-    thread::sleep(Duration::from_secs(60));
+    thread::sleep(Duration::from_secs(1));
   }
 }
 
