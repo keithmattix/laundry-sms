@@ -42,14 +42,14 @@ fn main() {
     Ok(_) => (),
     Err(err) => error!("GPIO error occurred: {}.", err),
   }
-  let mut signals = ArrayVec::from([Level::Low;10]);
+  let mut signals = ArrayVec::from([Level::Low;3]);
   let mut active: bool = false; // active represents whether or not the laundry machine is active
   loop {
     let level = gpio.poll_interrupt(GPIO_VIBRATION, false, None).unwrap().unwrap();
     match signals.try_insert(0, level) { // insert the new reading into the fixed vector
       Ok(_) => (),
       Err(_e) => {
-        signals.remove(9);
+        signals.remove(2);
         signals.insert(0, level);
       }
     }
